@@ -12,17 +12,23 @@ jobs:
     
     runs-on: ubuntu-latest
     steps:
-      - name: ci-build
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: setup go
+        uses: actions/setup-go@v2
         with:
           go-version: '^1.14.1' # The Go version to download (if necessary) and use.
-      - uses: docker/login-action@v1
+
+      - name: login docker
+        uses: docker/login-action@v1
         with:
           registry: ghcr.io/leuchtdiode
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - run: |
+
+      - name: build & deploy
+        run: |
           go version
           export DOCKER_IMAGE=ghcr.io/luechtdiode/storj-velero-plugin
           export BRANCH_NAME=$(shell git rev-parse --abbrev-ref HEAD | sed "s!/!-!g")
