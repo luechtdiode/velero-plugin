@@ -7,14 +7,12 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"net/url"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 	veleroplugin "github.com/vmware-tanzu/velero/pkg/plugin/framework"
 
 	"storj.io/uplink"
@@ -23,7 +21,6 @@ import (
 // Config params.
 const (
 	accessGrant = "accessGrant"
-	pluginname = "storjlabs/velero-plugin"
 )
 
 const defaultLinksharingBaseURL = "https://link.tardigradeshare.io"
@@ -51,20 +48,19 @@ func NewObjectStore(logger logrus.FieldLogger) *ObjectStore {
 func (o *ObjectStore) Init(config map[string]string) error {
 	o.log.Debug("objectStore.Init called")
 
-	o.log.Debug("Getting plugin config")
-	pluginconfig, err := getPluginConfig(veleroplugin.PluginKindRestoreItemAction, pluginname, o.client)
-	if err != nil {
-		o.log.Errorf("No plugin configmap/secret found with label '%s', using config provided by Velero-Config", pluginname)
-	} else {
-		config = pluginconfig
+	o.log.Debug("Getting accessGrant from environment")
+	grant := os.Getenv(accessGrant)
+    if grant != "" {
+		o.log.Debug("accessGrant from environment found")
+    } else {
+		err := veleroplugin.ValidateObjectStoreConfigKeys(config, accessGrant)
+		if err != nil {
+			return err
+		}
+		grant = config[accessGrant]
 	}
 
-	err = veleroplugin.ValidateObjectStoreConfigKeys(config, accessGrant)
-	if err != nil {
-		return err
-	}
-
-	o.access, err = uplink.ParseAccess(config[accessGrant])
+	o.access, err = uplink.ParseAccess(grant)
 	if err != nil {
 		return err
 	}
@@ -211,29 +207,4 @@ func (o *ObjectStore) CreateSignedURL(bucket, key string, ttl time.Duration) (st
 		url.PathEscape(restrictedAccessGrant),
 		url.PathEscape(bucket),
 		url.PathEscape(key)), nil
-}
-
-func getPluginConfig(kind veleroplugin.PluginKind, name string, client corev1client.ConfigMapInterface) (*corev1.ConfigMap, error) {
-	opts := metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("velero.io/plugin-config,%s=%s", name, kind),
-	}
-
-	list, err := client.List(context.TODO(), opts)
-	if err != nil {
-		return nil, errors.WithStack(err)
-	}
-
-	if len(list.Items) == 0 {
-		return nil, nil
-	}
-
-	if len(list.Items) > 1 {
-		var items []string
-		for _, item := range list.Items {
-			items = append(items, item.Name)
-		}
-		return nil, errors.Errorf("found more than one ConfigMap matching label selector %q: %v", opts.LabelSelector, items)
-	}
-
-	return &list.Items[0], nil
 }
