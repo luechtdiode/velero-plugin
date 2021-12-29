@@ -12,6 +12,9 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 	veleroplugin "github.com/vmware-tanzu/velero/pkg/plugin/framework"
 
 	"storj.io/uplink"
@@ -49,7 +52,7 @@ func (o *ObjectStore) Init(config map[string]string) error {
 	o.log.Debug("objectStore.Init called")
 
 	o.log.Debug("Getting plugin config")
-	pluginconfig, err := getPluginConfig(framework.PluginKindRestoreItemAction, pluginname, a.client)
+	pluginconfig, err := getPluginConfig(veleroplugin.PluginKindRestoreItemAction, pluginname, a.client)
 	if err != nil {
 		o.log.Errorf("No plugin configmap/secret found with label '%s', using config provided by Velero-Config", pluginname)
 	} else {
@@ -210,7 +213,7 @@ func (o *ObjectStore) CreateSignedURL(bucket, key string, ttl time.Duration) (st
 		url.PathEscape(key)), nil
 }
 
-func getPluginConfig(kind framework.PluginKind, name string, client corev1client.ConfigMapInterface) (*corev1.ConfigMap, error) {
+func getPluginConfig(kind veleroplugin.PluginKind, name string, client corev1client.ConfigMapInterface) (*corev1.ConfigMap, error) {
 	opts := metav1.ListOptions{
 		LabelSelector: fmt.Sprintf("velero.io/plugin-config,%s=%s", name, kind),
 	}
