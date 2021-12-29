@@ -5,14 +5,14 @@ name: Java CI with Maven
 
 on:
   push:
-    branches: 
-      - '**'
+    branches: [ '**' ]
 
 jobs:
   build:
+    
     runs-on: ubuntu-latest
-    - name: ci-build
-      steps:
+    steps:
+      - name: ci-build
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
         with:
