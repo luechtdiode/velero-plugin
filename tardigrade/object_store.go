@@ -54,7 +54,7 @@ func (o *ObjectStore) Init(config map[string]string) error {
 	grant := os.Getenv(accessGrant)
 
 	if grant != "" {
-		o.log.Debugf("accessGrant from environment found: '%s'", grant)
+		o.log.Debug("accessGrant from environment found")
 	} else {
 		err = veleroplugin.ValidateObjectStoreConfigKeys(config, accessGrant)
 		if err != nil {
@@ -65,6 +65,7 @@ func (o *ObjectStore) Init(config map[string]string) error {
 
 	o.access, err = uplink.ParseAccess(grant)
 	if err != nil {
+		o.log.Debugf("accessGrant could not be parsed: %s", grant)
 		return err
 	}
 
