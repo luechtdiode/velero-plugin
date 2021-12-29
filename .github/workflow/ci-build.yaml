@@ -1,0 +1,31 @@
+# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
+# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
+
+name: Java CI with Maven
+
+on:
+  push:
+    branches: 
+      - '**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    - name: ci-build
+      steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '^1.14.1' # The Go version to download (if necessary) and use.
+      - uses: docker/login-action@v1
+        with:
+          registry: ghcr.io/leuchtdiode
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: go version
+      - run: |
+        export DOCKER_IMAGE=ghcr.io/luechtdiode/storj-velero-plugin
+        export BRANCH_NAME=$(shell git rev-parse --abbrev-ref HEAD | sed "s!/!-!g")
+        export DOCKER_TAG=${BRANCH_NAME}
+        make plugin-build
+        docker push $DOCKER_IMAGE:$DOCKER_TAG
