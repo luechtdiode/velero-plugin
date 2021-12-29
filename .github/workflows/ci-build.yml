@@ -22,10 +22,10 @@ jobs:
           registry: ghcr.io/leuchtdiode
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - run: go version
       - run: |
-        export DOCKER_IMAGE=ghcr.io/luechtdiode/storj-velero-plugin
-        export BRANCH_NAME=$(shell git rev-parse --abbrev-ref HEAD | sed "s!/!-!g")
-        export DOCKER_TAG=${BRANCH_NAME}
-        make plugin-build
-        docker push $DOCKER_IMAGE:$DOCKER_TAG
+          go version
+          export DOCKER_IMAGE=ghcr.io/luechtdiode/storj-velero-plugin
+          export BRANCH_NAME=$(shell git rev-parse --abbrev-ref HEAD | sed "s!/!-!g")
+          export DOCKER_TAG=${BRANCH_NAME}
+          make plugin-build
+          docker push $DOCKER_IMAGE:$DOCKER_TAG
