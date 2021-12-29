@@ -53,9 +53,9 @@ func (o *ObjectStore) Init(config map[string]string) error {
 	o.log.Debug("Getting accessGrant from environment")
 	grant := os.Getenv(accessGrant)
 
-        if grant != "" {
-		o.log.Debug("accessGrant from environment found")
-        } else {
+	if grant != "" {
+		o.log.Debugf("accessGrant from environment found: '%s'", grant)
+	} else {
 		err = veleroplugin.ValidateObjectStoreConfigKeys(config, accessGrant)
 		if err != nil {
 			return err
