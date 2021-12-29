@@ -20,6 +20,7 @@ import (
 // Config params.
 const (
 	accessGrant = "accessGrant"
+	pluginname = "storjlabs/velero-plugin"
 )
 
 const defaultLinksharingBaseURL = "https://link.tardigradeshare.io"
@@ -46,6 +47,14 @@ func NewObjectStore(logger logrus.FieldLogger) *ObjectStore {
 //   - accessGrant (required): serialized access grant to Tardigrade project.
 func (o *ObjectStore) Init(config map[string]string) error {
 	o.log.Debug("objectStore.Init called")
+
+	o.log.Debug("Getting plugin config")
+	pluginconfig, err := getPluginConfig(framework.PluginKindRestoreItemAction, pluginname, a.client)
+	if err != nil {
+		o.log.Errorf("No plugin configmap/secret found with label '%s', using config provided by Velero-Config", pluginname)
+	} else {
+		config := pluginconfig
+	}
 
 	err := veleroplugin.ValidateObjectStoreConfigKeys(config, accessGrant)
 	if err != nil {
@@ -199,4 +208,29 @@ func (o *ObjectStore) CreateSignedURL(bucket, key string, ttl time.Duration) (st
 		url.PathEscape(restrictedAccessGrant),
 		url.PathEscape(bucket),
 		url.PathEscape(key)), nil
+}
+
+func getPluginConfig(kind framework.PluginKind, name string, client corev1client.ConfigMapInterface) (*corev1.ConfigMap, error) {
+	opts := metav1.ListOptions{
+		LabelSelector: fmt.Sprintf("velero.io/plugin-config,%s=%s", name, kind),
+	}
+
+	list, err := client.List(context.TODO(), opts)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+
+	if len(list.Items) == 0 {
+		return nil, nil
+	}
+
+	if len(list.Items) > 1 {
+		var items []string
+		for _, item := range list.Items {
+			items = append(items, item.Name)
+		}
+		return nil, errors.Errorf("found more than one ConfigMap matching label selector %q: %v", opts.LabelSelector, items)
+	}
+
+	return &list.Items[0], nil
 }
