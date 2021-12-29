@@ -30,8 +30,13 @@ jobs:
       - name: build & deploy
         run: |
           go version
-          export DOCKER_IMAGE=ghcr.io/luechtdiode/storj-velero-plugin
-          export BRANCH_NAME=$(shell git rev-parse --abbrev-ref HEAD | sed "s!/!-!g")
-          export DOCKER_TAG=${BRANCH_NAME}
+
+          DOCKER_IMAGE=ghcr.io/luechtdiode/storj-velero-plugin
+          BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD | sed "s!/!-!g")
+          DOCKER_TAG=${BRANCH_NAME}
+
+          echo $DOCKER_IMAGE, $BRANCH_NAME, $DOCKER_TAG
+
           make plugin-build
+
           docker push $DOCKER_IMAGE:$DOCKER_TAG
