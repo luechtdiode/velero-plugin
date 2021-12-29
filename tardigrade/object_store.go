@@ -52,14 +52,14 @@ func (o *ObjectStore) Init(config map[string]string) error {
 	o.log.Debug("objectStore.Init called")
 
 	o.log.Debug("Getting plugin config")
-	pluginconfig, err := getPluginConfig(veleroplugin.PluginKindRestoreItemAction, pluginname, a.client)
+	pluginconfig, err := getPluginConfig(veleroplugin.PluginKindRestoreItemAction, pluginname, o.client)
 	if err != nil {
 		o.log.Errorf("No plugin configmap/secret found with label '%s', using config provided by Velero-Config", pluginname)
 	} else {
-		config := pluginconfig
+		config = pluginconfig
 	}
 
-	err := veleroplugin.ValidateObjectStoreConfigKeys(config, accessGrant)
+	err = veleroplugin.ValidateObjectStoreConfigKeys(config, accessGrant)
 	if err != nil {
 		return err
 	}
